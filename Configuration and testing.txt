@@ -1,0 +1,189 @@
+
+
+# Authenticate with GCP
+gcloud auth login
+gcloud config set project qwiklabs-gcp-02-cac9665e5591
+
+# Create a Virtual Machine (VM)
+gcloud compute instances create vishant-instance \
+  --zone=us-east1-c \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --tags=http-server,https-server \
+  --boot-disk-size=50GB
+
+# Auto-Scaling Configuration
+
+## Step 1: Create an Instance Template
+gcloud compute instance-templates create vishant-instance-template \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=50GB \
+  --tags=http-server,https-server
+
+## Step 2: Create a Managed Instance Group (MIG)
+gcloud compute instance-groups managed create vishant-instance-group \
+  --base-instance-name=vishant-instance \
+  --size=1 \
+  --template=vishant-instance-template \
+  --zone=us-east1-c
+
+## Step 3: Set Auto-Scaling Policy
+gcloud compute instance-groups managed set-autoscaling vishant-instance-group \
+  --zone=us-east1-c \
+  --min-num-replicas=1 \
+  --max-num-replicas=5 \
+  --target-cpu-utilization=0.6 \
+  --cool-down-period=90
+
+# Security Configuration
+
+## Step 1: IAM Role Setup
+# Grant Compute Instance Admin Role
+gcloud projects add-iam-policy-binding qwiklabs-gcp-02-cac9665e5591 \
+  --member=user:student-04-53ef05a4bc9b@qwiklabs.net \
+  --role=roles/compute.instanceAdmin
+
+# Grant Viewer Role
+gcloud projects add-iam-policy-binding qwiklabs-gcp-02-cac9665e5591 \
+  --member=user:student-04-53ef05a4bc9b@qwiklabs.net \
+  --role=roles/viewer
+
+## Step 2: Configure Firewall Rules
+# Allow SSH, HTTP, and HTTPS Traffic
+gcloud compute firewall-rules create allow-traffic-rules \
+  --direction=INGRESS \
+  --priority=1000 \
+  --network=default \
+  --action=ALLOW \
+  --rules=icmp,tcp:80,tcp:443,udp:67-69 \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=http-server,https-server
+
+
+
+Step-by-Step Instructions for Implementation
+1. Creation of a VM Instance on GCP
+Authenticate with GCP
+# Log in to Google Cloud
+ gcloud auth login
+
+# Set the active project
+ gcloud config set project qwiklabs-gcp-02-cac9665e5591
+Create a Virtual Machine (VM)
+gcloud compute instances create vishant-instance \
+  --zone=us-east1-c \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --tags=http-server,https-server \
+  --boot-disk-size=50GB
+2. Auto-Scaling Configuration
+Step 1: Create an Instance Template
+gcloud compute instance-templates create vishant-instance-template \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=50GB \
+  --tags=http-server,https-server
+Step 2: Create a Managed Instance Group (MIG)
+gcloud compute instance-groups managed create vishant-instance-group \
+  --base-instance-name=vishant-instance \
+  --size=1 \
+  --template=vishant-instance-template \
+  --zone=us-east1-c
+Step 3: Set Auto-Scaling Policy
+gcloud compute instance-groups managed set-autoscaling vishant-instance-group \
+  --zone=us-east1-c \
+  --min-num-replicas=1 \
+  --max-num-replicas=5 \
+  --target-cpu-utilization=0.6 \
+  --cool-down-period=90
+3. Security Configuration
+Step 1: IAM Role Setup
+Grant Compute Instance Admin Role
+gcloud projects add-iam-policy-binding qwiklabs-gcp-02-cac9665e5591 \
+  --member=user:student-04-53ef05a4bc9b@qwiklabs.net \
+  --role=roles/compute.instanceAdmin
+Grant Viewer Role
+gcloud projects add-iam-policy-binding qwiklabs-gcp-02-cac9665e5591 \
+  --member=user:student-04-53ef05a4bc9b@qwiklabs.net \
+  --role=roles/viewer
+Step 2: Configure Firewall Rules
+Allow SSH, HTTP, and HTTPS Traffic
+gcloud compute firewall-rules create allow-traffic-rules \
+  --direction=INGRESS \
+  --priority=1000 \
+  --network=default \
+  --action=ALLOW \
+  --rules=icmp,tcp:80,tcp:443,udp:67-69 \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=http-server,https-server
+_______________________________________________________________________________
+Checking Configurations:
+Check Authentication & Project Configuration
+gcloud auth list
+ Expected Output: Your authenticated user (student-04-53ef05a4bc9b@qwiklabs.net) should be listed.
+gcloud config list project
+ Expected Output: qwiklabs-gcp-02-cac9665e5591 should be the active project.
+________________________________________
+Verify Virtual Machine (VM) Instance
+gcloud compute instances list --filter="name=vishant-instance"
+Expected Output: The instance vishant-instance should be listed with ZONE: us-east1-c and STATUS: RUNNING.
+gcloud compute instances describe vishant-instance --zone=us-east1-c
+Expected Output: Detailed instance information, including machine type (e2-medium), disk size (50GB), and assigned external IP.
+________________________________________
+Verify Instance Template
+gcloud compute instance-templates list --filter="name=vishant-instance-template"
+ Expected Output: The instance template vishant-instance-template should be listed.
+gcloud compute instances describe vishant-instance --zone=us-east1-b
+gcloud compute instance-templates describe vishant-instance-template
+ Expected Output: Should show machineType: e2-medium, boot disk size: 50GB, and image: ubuntu-2204-lts.
+________________________________________
+Verify Managed Instance Group (MIG)
+gcloud compute instance-groups managed list --filter="name=vishant-instance-group"
+Expected Output: vishant-instance-group should be listed under ZONE: us-east1-c.
+gcloud compute instance-groups managed describe vishant-instance-group --zone=us-east1-c
+Expected Output: It should show the base instance name (vishant-instance), instance template (vishant-instance-template), and number of instances.
+gcloud compute instance-groups managed list-instances vishant-instance-group --zone=us-east1-c
+ Expected Output: It should list instances currently in the group.
+________________________________________
+Verify Auto-Scaling Policy
+gcloud compute instance-groups managed get-autoscaler vishant-instance-group --zone=us-east1-c
+Expected Output: Should show min replicas: 1, max replicas: 5, CPU utilization target: 0.6, and cool-down period: 90.
+________________________________________
+Verify IAM Roles
+gcloud projects get-iam-policy qwiklabs-gcp-02-cac9665e5591 --flatten="bindings[].members" --format="table(bindings.role, bindings.members)" | grep student-04-53ef05a4bc9b@qwiklabs.net
+ Expected Output:
+•	roles/compute.instanceAdmin
+•	roles/viewer
+________________________________________
+Verify Firewall Rules
+gcloud compute firewall-rules list --filter="name=allow-traffic-rules"
+ Expected Output: A rule named allow-traffic-rules allowing SSH, HTTP, HTTPS, ICMP from 0.0.0.0/0.
+gcloud compute firewall-rules describe allow-traffic-rules
+ Expected Output: Should show:
+•	Allowed protocols: icmp, tcp:80, tcp:443, udp:67-69
+•	Source range: 0.0.0.0/0
+•	Target tags: http-server, https-server
+________________________________________
+Verify External Connectivity
+Check the External IP of the VM
+gcloud compute instances list --filter="name=vishant-instance" --format="get(networkInterfaces[0].accessConfigs[0].natIP)"
+Copy the external IP and open it in a browser (http://<EXTERNAL_IP>).
+Expected Output: If a web server is running, it should be accessible.
+Check SSH Access
+gcloud compute ssh vishant-instance --zone=us-east1-c
+Expected Output: Should connect to the VM.
+ Triggering Autoscaling:
+sudo apt install -y stress-ng
+stress-ng --cpu 4 --cpu-load 80 --timeout 300
+•	--cpu 4: Stresses 4 CPU cores.
+•	--cpu-load 80: Keeps CPU load at ~80%.
+•	--timeout 300: Runs for 5 minutes.
+Monitor Auto-Scaling
+Check if a new VM instance is created due to increased CPU usage by running:
+gcloud compute instance-groups managed list-instances vishant-instance-group --zone=us-east1-c
+This will trigger GCP’s auto-scaling if the target CPU utilization (e.g., 60%) is exceeded. Let me know if you need further assistance! 
